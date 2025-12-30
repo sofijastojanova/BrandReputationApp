@@ -83,7 +83,9 @@ else:
     if len(reviews_2023) == 0:
         st.warning("No 2023 reviews found.")
         st.stop()
-    
+        
+    reviews_2023['date'] = pd.to_datetime(reviews_2023['date'], errors='coerce')
+
     # STRING MONTHS - NO RANGEERROR
     reviews_2023['month_str'] = reviews_2023['date'].dt.strftime('%Y-%m')
     months = sorted(reviews_2023['month_str'].unique())

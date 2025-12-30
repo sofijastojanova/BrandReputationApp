@@ -1,6 +1,5 @@
 import streamlit as st
 import pandas as pd
-from transformers import pipeline
 
 @st.cache_data
 def load_data():
@@ -34,15 +33,42 @@ elif section == "Testimonials":
     st.dataframe(testimonials_df)
 
 else:
-    st.header("Reviews – Sentiment Analysis")
+    st.header("Reviews – Pre-computed Sentiment Analysis (Professor Method)")
     
-    if reviews_df.empty:
-        st.error("No reviews.csv - run: python scrape_data.py")
-        st.stop()
-    
-    # CLEAN DATA
-    reviews_clean = reviews_df.dropna(subset=['date']).copy()
-    reviews_2023 = reviews_clean[reviews_clean['date'].dt.year == 2023].copy()
+    # Load professor-approved file (you'll create this next)
+    try:
+        reviews_sentiment = pd.read_csv("data/reviews_with_sentiment.csv")
+        st.success(f"✅ Professor-approved: Loaded {len(reviews_sentiment)} reviews with sentiment!")
+        
+        # Filter 2023
+        reviews_2023 = reviews_sentiment[pd.to_datetime(reviews_sentiment['date']).dt.year == 2023]
+        st.info(f"📊 2023 reviews: {len(reviews_2023)}")
+        
+        if len(reviews_2023) > 0:
+            # Month selector
+            reviews_2023['month_str'] = pd.to_datetime(reviews_2023['date']).dt.strftime('%Y-%m')
+            months = sorted(reviews_2023['month_str'].unique())
+            selected_month = st.select_slider("Select month:", options=months, value=months[0])
+            
+            month_reviews = reviews_2023[reviews_2023['month_str'] == selected_month]
+            
+            st.subheader(f"Reviews: {selected_month} ({len(month_reviews)})")
+            
+            # Show table
+            st.dataframe(month_reviews[['date', 'text', 'sentiment', 'confidence']].head(10))
+            
+            # Charts
+            counts = month_reviews['sentiment'].value_counts()
+            st.subheader("📈 Sentiment Distribution")
+            st.bar_chart(counts)
+            
+        else:
+            st.warning("No 2023 reviews in pre-computed file.")
+            
+    except FileNotFoundError:
+        st.error("❌ Missing 'data/reviews_with_sentiment.csv' - run sentiment analysis first!")
+        st.info("👉 Command Prompt: python → paste sentiment code → exit()")
+
     
     st.info(f"📊 Loaded {len(reviews_2023)} reviews from 2023")
     

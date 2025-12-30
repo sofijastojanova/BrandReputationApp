@@ -1,5 +1,7 @@
 import streamlit as st
 import pandas as pd
+from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
+analyzer = SentimentIntensityAnalyzer()
 
 @st.cache_data
 def load_data():
@@ -13,10 +15,16 @@ def load_data():
 products_df, testimonials_df, reviews_df = load_data()
 
 @st.cache_resource
-def load_sentiment_model():
-    return pipeline("sentiment-analysis", model="distilbert-base-uncased-finetuned-sst-2-english")
-
-sentiment_model = load_sentiment_model()
+def get_sentiment(text):
+    if pd.isna(text):
+        return 'NEUTRAL'
+    score = analyzer.polarity_scores(str(text))
+    compound = score['compound']
+    if compound >= 0.05:
+        return 'POSITIVE'
+    elif compound <= -0.05:
+        return 'NEGATIVE'
+    return 'NEUTRAL'
 
 st.set_page_config(page_title="Brand Reputation Monitor", layout="wide")
 st.title("Brand Reputation Monitor – 2023")
